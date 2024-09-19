@@ -80,20 +80,68 @@ Script en Python para limpiar un CSV y realizar agregaciones:
 import pandas as pd
 
 # Cargar el archivo CSV
-df = pd.read_csv('/mnt/data/ID,Nombre,Fecha,Costo.CSV')
+file_path = 'ID,Nombre,Fecha,Costo.CSV'
+df = pd.read_csv(file_path)
 
 # Eliminar duplicados
-df = df.drop_duplicates()
+df_cleaned = df.drop_duplicates()
 
-# Realizar agregaciones
-total_costo = df['Costo'].sum()
-promedio_costo = df['Costo'].mean()
+# Eliminar caracteres no numéricos en la columna 'Costo' y convertir a numérico
+df_cleaned['Costo'] = pd.to_numeric(df_cleaned['Costo'], errors='coerce')
 
-print(f"Total Costo: {total_costo}")
-print(f"Promedio Costo: {promedio_costo}")
+# Eliminar filas donde el costo sea NaN 
+df_cleaned = df_cleaned.dropna(subset=['Costo'])
 
-# Guardar el CSV limpio
-df.to_csv('limpio.csv', index=False)
+# Realizar agregaciones básicas 
+suma_costo = df_cleaned['Costo'].sum()
+promedio_costo = df_cleaned['Costo'].mean()
+
+# Guardar el archivo 
+df_cleaned.to_csv('cleaned_file.csv', index=False)
+
+# Mostrar resultados
+print(f"Suma total del costo: {suma_costo}")
+print(f"Promedio del costo: {promedio_costo}")
+```
+
+- cloud:
+  ```python
+  import pandas as pd
+
+   # Inicializar variables de agregación
+   suma_costo = 0.0
+   total_registros = 0
+   total_valores_validos = 0
+   
+   # Leer el archivo CSV en chunks para manejar grandes volúmenes de datos
+   file_path = 'ID,Nombre,Fecha,Costo.CSV'
+   chunk_size = 10000 
+   
+   for chunk in pd.read_csv(file_path, chunksize=chunk_size):
+       # Eliminar duplicados en cada chunk
+       chunk_cleaned = chunk.drop_duplicates()
+   
+       # Convertir la columna 'Costo' a numérica, Eeto fuerza los errores a NaN
+       chunk_cleaned['Costo'] = pd.to_numeric(chunk_cleaned['Costo'], errors='coerce')
+   
+       # Eliminar filas donde costo sea NaN
+       chunk_cleaned = chunk_cleaned.dropna(subset=['Costo'])
+   
+       # Sumar los costos validos en este chunk
+       suma_costo += chunk_cleaned['Costo'].sum()
+       
+       # Acumular el total de registros procesdos y los valores validos
+       total_registros += len(chunk)
+       total_valores_validos += len(chunk_cleaned)
+   
+   # Calcular el promedio del costo
+   promedio_costo = suma_costo / total_valores_validos if total_valores_validos > 0 else 0
+   
+   # Mostrar resultados
+   print(f"Suma total del costo: {suma_costo}")
+   print(f"Promedio del costo: {promedio_costo}")
+   print(f"Total de registros procesados: {total_registros}")
+   print(f"Total de valores válidos: {total_valores_validos}")
 ```
 ### Optimización para grandes volúmenes:
 
